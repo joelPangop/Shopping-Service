@@ -1,0 +1,12 @@
+extends layout
+
+block content
+    table.table.table-striped
+        tr
+            th Name
+            th Type
+
+        each art in articles
+            tr
+                td= art.name
+                td= art.type
