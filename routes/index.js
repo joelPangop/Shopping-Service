@@ -17,6 +17,12 @@ const Address = mongoose.model('Address');
 require('../models/Telephone');
 const Telephone = mongoose.model('Telephone');
 
+require('../models/Message');
+const Message = mongoose.model('Message');
+
+require('../models/Notification');
+const Notification = mongoose.model('Notification');
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -86,9 +92,6 @@ async function newUser(body, cb) {
     console.log("address", newAddress);
     console.log("telephones", newTelephones);
 
-    // body[1] = newUserInfo;
-    // body[1].address = newAddress;
-
     if (!body.role) {
         body.role = "Guest";
     }
@@ -143,12 +146,48 @@ router.put('/article/utilisateurId/:userId/articleId/:articleId', async function
     // res.render('index', {title: 'Express'});
 });
 
+router.get('/article/utilisateurId/:userId/articleId/:articleId', async function (req, res, cb) {
+    const userId = req.params.userId;
+    const articleId = req.params.articleId;
+    const art = await Article.findOne({"_id": articleId, "utilisateurId": userId});
+    res.status(200).json({article: art});
+});
+
 router.get('/article', async function (req, res, next) {
     const articles = await Article.find({});
     // res.status(200).json(articles);
     console.log('articles', articles);
-    res.status(200).send(JSON.stringify(articles));
+    res.status(200).send(articles);
     // res.render('articles', {articles: articles});
+});
+
+router.put('/article/:articleId', async function (req, res, cb) {
+    const articleId = req.params.articleId;
+    const art = await Article.findOne({"_id": articleId});
+    if(art){
+        const art1 = new Article(req.body);
+        art.title = art1.title;
+        art.price = art1.price;
+        art.category = art1.category;
+        art.description = art1.description;
+        art.pictures = art1.pictures;
+        art.averageStar = art1.averageStar;
+        art.state = art1.state;
+        art.city = art1.city;
+        art.owner = art1.owner;
+        art.availability = art1.availability;
+        art.utilisateurId = art1.utilisateurId;
+        art.save();
+    }
+    res.status(200).json({article: art});
+});
+
+
+router.delete('/article/:id', async function (req, res, cb) {
+    const id = req.params.id;
+    const art = await Article.findOne({"_id": id});
+    art.delete();
+    res.status(200).send("Article deleted succesfully");
 });
 
 router.get('/article/category/:category', async function (req, res, next) {
@@ -168,6 +207,16 @@ router.get('/article/:id', async function (req, res, next) {
     res.status(200).send(article);
     // res.render('articles', {articles: articles});
 });
+
+router.get('/article/user/:userId', async function (req, res, next) {
+    const userId = req.params.userId;
+    const article = await Article.find({"utilisateurId": userId});
+    // res.status(200).json(articles);
+    console.log('articles', article);
+    res.status(200).send(article);
+    // res.render('articles', {articles: articles});
+});
+
 
 router.post('/login', async (req, res) => {
     const email = req.body.email;
@@ -207,6 +256,58 @@ router.post('/register', async (req, res) => {
             });
         });
     });
+});
+
+router.get('/Utilisateur/:userId/messages', async function (req, res, next) {
+    const userId = req.params.userId;
+    const message = await Message.find({"utilisateurId": userId});
+    // res.status(200).json(articles);
+    console.log('messages', message);
+    res.status(200).send(message);
+});
+
+router.get('/Messages/sent/:username', async function (req, res, next) {
+    const username = req.params.username;
+    const message = await Message.find({"title": username});
+    // res.status(200).json(articles);
+    console.log('messages', message);
+    res.status(200).send(message);
+});
+
+router.post('/message/Utilisateur/:userId', async function (req, res, next) {
+    const userId = req.params.userId;
+    const user = await User.findOne({"_id": userId});
+    const message = new Message();
+    message.title = req.body.title;
+    message.picture = user.avatar;
+    message.utilisateurId = userId;
+    message.content = req.body.content;
+    message.createAt = req.body.createAt;
+    message.read = req.body.read;
+    message.messageTo =  req.body.messageTo;
+    await message.save();
+    res.status(200).send({sucess: true, res: message});
+});
+
+router.get('/Utilisateur/:userId/notifications', async function (req, res, next) {
+    const userId = req.params.userId;
+    const notifications = await Notification.find({"utilisateurId": userId});
+    console.log('notifications', notifications);
+    res.status(200).send(notifications);
+});
+
+router.post('/notification/Utilisateur/:userId', async function (req, res, next) {
+    const userId = req.params.userId;
+    const notification = new Notification();
+    notification.title = req.body.title;
+    notification.avatar = "https://ionicframework.com/docs/demos/api/avatar/avatar.svg";
+    notification.utilisateurId = userId;
+    notification.message = req.body.message;
+    notification.createAt = req.body.createAt;
+    notification.read = req.body.read;
+    notification.sender =  req.body.sender;
+    await notification.save();
+    res.status(200).send({sucess: true, res: notification});
 });
 
 let gfs;
@@ -300,7 +401,9 @@ router.post('/upload', upload.array('file', 10), (req, res) => {
 // @route POST /upload
 // @desc  Uploads file to DB
 router.post('/uploadImgProfil', upload.single("file"), (req, res) => {
-    res.json({"filename": fileSaved[0]});
+    res.json({"filename": fileSaved[0]}).then(() => {
+        fileSaved = [];
+    });
 });
 
 // @route GET /files
@@ -360,8 +463,8 @@ router.get('/image/:filename', (req, res) => {
 
 // @route DELETE /files/:id
 // @desc  Delete file
-router.delete('/files/:id', (req, res) => {
-    gfs.remove({_id: req.params.id, root: 'uploads'}, (err, gridStore) => {
+router.delete('/files/:filename', (req, res) => {
+    gfs.remove({filename: req.params.filename, root: 'uploads'}, (err, gridStore) => {
         if (err) {
             return res.status(404).json({err: err});
         } else {
