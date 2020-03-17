@@ -73,32 +73,33 @@ router.put('/user', async function (req, res, cb) {
 });
 
 async function newUser(body, cb) {
-    const newUser = new User(body[0]);
+    const newUser = new User(body);
     console.log(body);
-    const newUserInfo = new UserInfo(body[1]);
-
-    const newAddress = new Address();
-
-    newAddress.roadName = body[1].address.nomRue;
-    newAddress.appartNumber = body[1].address.appNum;
-    // newUserInfo.address.compte = body.userInfo.compte;
-    newAddress.town = body[1].address.ville;
-    newAddress.region = body[1].address.region;
-    newAddress.country = body[1].address.pays;
-    // let newTelephones = [];
-    let newTelephones = body[1].telephones;
-
-    console.log("userInfo", newUserInfo);
-    console.log("address", newAddress);
-    console.log("telephones", newTelephones);
-
-    if (!body.role) {
-        body.role = "Guest";
-    }
-
-    newUser.userInfo = newUserInfo;
-    newUser.userInfo.address = newAddress;
-    await newAddress.save();
+    // const newUserInfo = new UserInfo(body.userInfo);
+    //
+    // const newAddress = new Address();
+    //
+    // newAddress.roadName = newUserInfo.address.roadName;
+    // newAddress.appartNumber = newUserInfo.address.appartNumber;
+    // // newUserInfo.address.compte = body.userInfo.compte;
+    // newAddress.town = newUserInfo.address.town;
+    // newAddress.region = newUserInfo.address.region;
+    // newAddress.country = newUserInfo.address.country;
+    // newAddress.postalCode = newUserInfo.address.postalCode;
+    // // let newTelephones = [];
+    // let newTelephones = newUserInfo.telephones;
+    //
+    // console.log("userInfo", newUserInfo);
+    // console.log("address", newAddress);
+    // console.log("telephones", newTelephones);
+    //
+    // // if (!body.role) {
+    // //     body.role = "Guest";
+    // // }
+    //
+    // newUser.userInfo = newUserInfo;
+    // newUser.userInfo.address = newAddress;
+    // await newAddress.save();
 
     return await newUser.save().then((err) => {
         cb(err);
@@ -237,11 +238,11 @@ router.post('/login', async (req, res) => {
     })
 });
 
-router.post('/register', async (req, res) => {
-    const name = req.body[0].name;
-    const email = req.body[0].email;
+router.post('/api/register', async (req, res) => {
+    const name = req.body.name;
+    const email = req.body.email;
     console.log(req.body);
-    const password = bcrypt.hashSync(req.body[0].password);
+    const password = bcrypt.hashSync(req.body.password);
 
     await newUser(req.body, (err, user) => {
         // if (err) return res.status(500).send("Server error!");
@@ -401,9 +402,7 @@ router.post('/upload', upload.array('file', 10), (req, res) => {
 // @route POST /upload
 // @desc  Uploads file to DB
 router.post('/uploadImgProfil', upload.single("file"), (req, res) => {
-    res.json({"filename": fileSaved[0]}).then(() => {
-        fileSaved = [];
-    });
+    res.json({"filename": fileSaved[0]});
 });
 
 // @route GET /files

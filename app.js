@@ -28,7 +28,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(cors({
-  origin: ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:8200', 'http://localhost:4200', 'http://localhost:4400', 'http://192.168.2.58:8100', 'http://192.168.2.58:8101']
+  origin: ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:8200', 'http://localhost:4200', 'http://localhost:4400',
+    'http://192.168.2.58:8100', 'http://192.168.2.58:8101', 'http://10.103.4.78:8100']
 }));
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
