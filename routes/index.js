@@ -117,7 +117,8 @@ router.get('/', function (req, res, next) {
     res.render('login', {title: 'Express'});
 });
 
-router.post('/article', async function (req, res, cb) {
+router.post('/article/utilisateurId/:userId', async function (req, res, cb) {
+    const userId = req.params.userId;
     const art = new Article();
     art.title = req.body.title;
     art.price = req.body.price;
@@ -128,8 +129,8 @@ router.post('/article', async function (req, res, cb) {
     art.state = req.body.state;
     art.city = req.body.city;
     art.availability = req.body.availability;
-    art.owner = '';
-    art.utilisateurId = '';
+    art.owner = req.body.owner;
+    art.utilisateurId = userId;
     await art.save();
     fileSaved = [];
     res.status(200).send({sucess: true, res: art});
@@ -165,7 +166,7 @@ router.get('/article', async function (req, res, next) {
 router.put('/article/:articleId', async function (req, res, cb) {
     const articleId = req.params.articleId;
     const art = await Article.findOne({"_id": articleId});
-    if(art){
+    if (art) {
         const art1 = new Article(req.body);
         art.title = art1.title;
         art.price = art1.price;
@@ -275,6 +276,57 @@ router.get('/Messages/sent/:username', async function (req, res, next) {
     res.status(200).send(message);
 });
 
+router.get('/Messages/all/:username/interlocutor/:interlocutorId', async function (req, res, next) {
+    const username = req.params.username;
+    const interlocutorId = req.params.interlocutorId;
+    const messages = await Message.find({$or: [{ $and: [{"title": interlocutorId }, {"messageTo": username}]}, {$and: [{"title": username}, {"messageTo": interlocutorId}]}]});
+    // res.status(200).json(articles);
+    console.log('messages', messages);
+    res.status(200).send(messages);
+});
+
+
+router.get('/Message/:id', async function (req, res, next) {
+    const id = req.params.id;
+    const message = await Message.findOne({"_id": id});
+    console.log('messages', message);
+    res.status(200).send(message);
+});
+
+router.delete('/Message/:id', async function (req, res, next) {
+    const id = req.params.id;
+    try{
+        const message = await Message.findOne({"_id": id});
+        console.log('messages', message);
+        await message.delete();
+        res.status(200).json({result: 'success'});
+    }catch (e) {
+        res.status(500).json({result: 'unsuccessfull'});
+    }
+});
+
+router.post('/Utilisateurs/:id/messages', async function (req, res, next) {
+    const id = req.params.id;
+    const message = new Message();
+    message.title = req.body.title;
+    message.picture = req.body.picture;
+    message.content = req.body.content;
+    message.read = req.body.read;
+    message.messageTo = req.body.messageTo;
+    message.utilisateurId = id;
+    // res.status(200).json(articles);
+    console.log('messages', message);
+    await message.save();
+    res.status(200).send(message);
+});
+
+router.get('/Utilisateurs/:avatar', async function (req, res, next) {
+    const avatar = req.params.avatar;
+    const user = await User.findOne({"avatar": avatar});
+    console.log('messages', user);
+    res.status(200).send(user);
+});
+
 router.post('/message/Utilisateur/:userId', async function (req, res, next) {
     const userId = req.params.userId;
     const user = await User.findOne({"_id": userId});
@@ -283,11 +335,31 @@ router.post('/message/Utilisateur/:userId', async function (req, res, next) {
     message.picture = user.avatar;
     message.utilisateurId = userId;
     message.content = req.body.content;
-    message.createAt = req.body.createAt;
     message.read = req.body.read;
-    message.messageTo =  req.body.messageTo;
+    message.messageTo = req.body.messageTo;
     await message.save();
     res.status(200).send({sucess: true, res: message});
+});
+
+router.post('/notifications', async function (req, res, next) {
+    const notification = new Notification();
+    notification.title = req.body.title;
+    notification.avatar = req.body.avatar;
+    notification.message = req.body.message;
+    notification.utilisateurId = req.body.utilisateurId;
+    notification.content = req.body.content;
+    notification.read = req.body.read;
+    notification.sender = req.body.sender;
+    await notification.save();
+    res.status(200).send({success: true, res: notification});
+});
+
+router.put('/Message/:id', async function (req, res, next) {
+    const id = req.params.id;
+    const message = await Message.findOne({"_id": id});
+    message.read = req.body.read;
+    await message.save();
+    res.status(200).send(message);
 });
 
 router.get('/Utilisateur/:userId/notifications', async function (req, res, next) {
@@ -297,6 +369,13 @@ router.get('/Utilisateur/:userId/notifications', async function (req, res, next)
     res.status(200).send(notifications);
 });
 
+router.get('/Utilisateur/:userId', async function (req, res, next) {
+    const userId = req.params.userId;
+    const user = await User.findOne({"_id": userId});
+    console.log('user', user);
+    res.status(200).send(user);
+});
+
 router.post('/notification/Utilisateur/:userId', async function (req, res, next) {
     const userId = req.params.userId;
     const notification = new Notification();
@@ -304,9 +383,8 @@ router.post('/notification/Utilisateur/:userId', async function (req, res, next)
     notification.avatar = "https://ionicframework.com/docs/demos/api/avatar/avatar.svg";
     notification.utilisateurId = userId;
     notification.message = req.body.message;
-    notification.createAt = req.body.createAt;
     notification.read = req.body.read;
-    notification.sender =  req.body.sender;
+    notification.sender = req.body.sender;
     await notification.save();
     res.status(200).send({sucess: true, res: notification});
 });
@@ -452,6 +530,7 @@ router.get('/image/:filename', (req, res) => {
             // Read output to browser
             const readstream = gfs.createReadStream(file.filename);
             readstream.pipe(res);
+            console.log(res)
         } else {
             res.status(404).json({
                 err: 'Not an image'

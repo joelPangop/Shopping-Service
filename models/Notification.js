@@ -21,10 +21,6 @@ const NotificationSchema = new Schema({
         type: String,
         require: true
     },
-    createAt: {
-        type: Number,
-        require: true
-    },
     read: {
         type: Boolean,
         require: true
