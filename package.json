@@ -22,7 +22,7 @@
     "logger": "0.0.1",
     "mongoose": "^5.8.9",
     "morgan": "~1.9.1",
-    "pug": "2.0.0-beta11",
+    "pug": "3.0.1",
     "webpack-dev-server": "^3.10.1"
   },
   "devDependencies": {
